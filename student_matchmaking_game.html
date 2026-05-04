@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Matchmaking Quiz Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container { width: 100%; max-width: 900px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            animation: slideIn 0.4s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 32px; }
+        .subtitle { color: #999; margin-bottom: 30px; font-size: 14px; }
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input[type="text"],
+        select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        /* Login Screen */
+        .login-form { max-width: 400px; margin: 0 auto; }
+        .form-group.full { width: 100%; }
+        
+        /* Waiting Room */
+        .waiting-container { text-align: center; }
+        .pulse-dot {
+            width: 16px;
+            height: 16px;
+            background: #667eea;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 4px;
+            animation: pulse 1.4s infinite;
+        }
+        .pulse-dot:nth-child(2) { animation-delay: 0.2s; }
+        .pulse-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .timer-label { color: #999; font-size: 14px; margin-top: 10px; }
+        .waiting-message { color: #666; margin: 20px 0; font-size: 16px; }
+        
+        /* Game Screen */
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .player-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        .player-card.active { border-color: #667eea; background: #f0f4ff; }
+        .player-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .player-score {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .player-label { color: #999; font-size: 12px; margin-top: 5px; }
+        
+        .question-area {
+            grid-column: 1 / -1;
+            background: #fff8f0;
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #ffe8d1;
+        }
+        .question-number { color: #999; font-size: 12px; margin-bottom: 10px; }
+        .question-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .option-btn {
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-align: left;
+            font-weight: 500;
+        }
+        .option-btn:hover { border-color: #667eea; background: #f0f4ff; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .option-btn.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .option-btn.locked {
+            background: #e9ecef;
+            border-color: #999;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .game-timer {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .timer-bar {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s linear;
+        }
+        .timer-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        /* Result Screen */
+        .result-container {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .result-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .result-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .result-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 30px 0;
+        }
+        .result-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .result-row:last-child { border-bottom: none; }
+        .result-row-label { color: #666; }
+        .result-row-value {
+            font-weight: 600;
+            color: #333;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        .button-group button { margin: 0; }
+        .secondary-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .secondary-btn:hover { background: #f0f4ff; }
+        
+        /* Animations */
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .bounce { animation: bounce 0.3s ease; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease; }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            .card { padding: 20px; }
+            h1 { font-size: 24px; }
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+            .options {
+                grid-template-columns: 1fr;
+            }
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div class="screen active" id="loginScreen">
+            <div class="card">
+                <h1>🎮 Quiz Battle</h1>
+                <p class="subtitle">Compete with other students in real-time</p>
+                
+                <form class="login-form" onsubmit="startMatchmaking(event)">
+                    <div class="form-group">
+                        <label for="playerName">Your Name</label>
+                        <input type="text" id="playerName" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject">Select Subject</label>
+                        <select id="subject" required>
+                            <option value="">-- Choose a subject --</option>
+                            <option value="math">Mathematics</option>
+                            <option value="english">English</option>
+                            <option value="science">Science</option>
+                            <option value="history">History</option>
+                            <option value="geography">Geography</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="form-group">Find Opponent</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Waiting Room -->
+        <div class="screen" id="waitingScreen">
+            <div class="card">
+                <div class="waiting-container">
+                    <h1>Finding Your Opponent...</h1>
+                    <p class="waiting-message">
+                        <span class="pulse-dot"></span>
+                        <span class="pulse-dot"></span>
+                        <span class="pulse-dot"></span>
+                    </p>
+                    <p style="color: #666; margin: 20px 0;">Subject: <strong id="waitingSubject"></strong></p>
+                    <div class="timer" id="waitTimer">60</div>
+                    <p class="timer-label">Waiting for another student...</p>
+                    <button onclick="cancelWaiting()" style="margin-top: 20px; background: #999;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="screen" id="gameScreen">
+            <div class="card">
+                <div class="game-container">
+                    <div class="player-card" id="player1Card">
+                        <div class="player-name" id="player1Name">Player 1</div>
+                        <div class="player-score" id="player1Score">0</div>
+                        <div class="player-label">Score</div>
+                    </div>
+                    
+                    <div class="player-card" id="player2Card">
+                        <div class="player-name" id="player2Name">Player 2</div>
+                        <div class="player-score" id="player2Score">0</div>
+                        <div class="player-label">Score</div>
+                    </div>
+                    
+                    <div class="question-area">
+                        <div class="question-number" id="questionNumber">Question 1/20</div>
+                        <div class="question-text" id="questionText">Loading question...</div>
+                        <div class="options" id="optionsContainer"></div>
+                    </div>
+                    
+                    <div class="game-timer">
+                        <div class="timer-bar">
+                            <div class="timer-fill" id="timerFill"></div>
+                        </div>
+                        <div class="timer-text" id="timerText">30s</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="screen" id="resultScreen">
+            <div class="card">
+                <div class="result-container">
+                    <div class="result-icon" id="resultIcon">🏆</div>
+                    <div class="result-title" id="resultTitle">You Won!</div>
+                    
+                    <div class="result-score" id="resultScore">1500</div>
+                    
+                    <div class="result-details">
+                        <div class="result-row">
+                            <span class="result-row-label">Correct Answers</span>
+                            <span class="result-row-value" id="correctAnswers">18/20</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Average Time</span>
+                            <span class="result-row-value" id="avgTime">8.5s</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Opponent</span>
+                            <span class="result-row-value" id="opponentName">John Doe</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Opponent Score</span>
+                            <span class="result-row-value" id="opponentScore">1200</span>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button onclick="rematchSameOpponent()" class="secondary-btn">Rematch</button>
+                        <button onclick="findNewOpponent()">New Opponent</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            currentPlayer: null,
+            opponent: null,
+            subject: null,
+            currentQuestion: 0,
+            questions: [],
+            answers: {},
+            scores: { player1: 0, player2: 0 },
+            startTimes: {},
+            questionTimes: {},
+            answered: false,
+            answeredBy: null,
+            waitingTimer: null,
+            questionTimer: null
+        };
+
+        // Sample Question Bank
+        const questionBanks = {
+            math: [
+                {
+                    q: "What is 15 × 12?",
+                    options: ["180", "160", "200", "175"],
+                    correct: 0
+                },
+                {
+                    q: "What is the square root of 144?",
+                    options: ["11", "12", "13", "14"],
+                    correct: 1
+                },
+                {
+                    q: "What is 35 ÷ 7?",
+                    options: ["4", "5", "6", "7"],
+                    correct: 1
+                },
+                {
+                    q: "What is 2³?",
+                    options: ["6", "8", "9", "12"],
+                    correct: 1
+                },
+                {
+                    q: "What is 50% of 80?",
+                    options: ["30", "40", "50", "60"],
+                    correct: 1
+                },
+                {
+                    q: "What is 9²?",
+                    options: ["81", "72", "90", "99"],
+                    correct: 0
+                },
+                {
+                    q: "Solve: 2x + 5 = 13. What is x?",
+                    options: ["3", "4", "5", "6"],
+                    correct: 1
+                },
+                {
+                    q: "What is 25 × 4?",
+                    options: ["100", "80", "120", "90"],
+                    correct: 0
+                },
+                {
+                    q: "What is the perimeter of a square with side 5?",
+                    options: ["10", "15", "20", "25"],
+                    correct: 2
+                },
+                {
+                    q: "What is 7 × 8?",
+                    options: ["54", "56", "58", "60"],
+                    correct: 1
+                },
+                {
+                    q: "What is 100 ÷ 4?",
+                    options: ["20", "25", "30", "35"],
+                    correct: 0
+                },
+                {
+                    q: "What is 6² + 3²?",
+                    options: ["45", "50", "55", "60"],
+                    correct: 0
+                },
+                {
+                    q: "What is the LCM of 4 and 6?",
+                    options: ["12", "10", "8", "6"],
+                    correct: 0
+                },
+                {
+                    q: "What is 12 × 11?",
+                    options: ["120", "132", "144", "156"],
+                    correct: 1
+                },
+                {
+                    q: "Solve: x + 10 = 25. What is x?",
+                    options: ["10", "15", "20", "25"],
+                    correct: 1
+                },
+                {
+                    q: "What is 3⁴?",
+                    options: ["12", "27", "81", "64"],
+                    correct: 2
+                },
+                {
+                    q: "What is 15 + 15 + 15?",
+                    options: ["45", "35", "50", "55"],
+                    correct: 0
+                },
+                {
+                    q: "What is 88 ÷ 8?",
+                    options: ["10", "11", "12", "13"],
+                    correct: 1
+                },
+                {
+                    q: "What is 23 × 2?",
+                    options: ["44", "46", "48", "50"],
+                    correct: 1
+                },
+                {
+                    q: "What is the GCD of 12 and 18?",
+                    options: ["2", "3", "6", "12"],
+                    correct: 2
+                }
+            ],
+            english: [
+                {
+                    q: "Which word is spelled correctly?",
+                    options: ["Definately", "Definitely", "Definitly", "Definitelly"],
+                    correct: 1
+                },
+                {
+                    q: "What is a synonym for 'happy'?",
+                    options: ["Sad", "Joyful", "Angry", "Tired"],
+                    correct: 1
+                },
+                {
+                    q: "Which sentence is grammatically correct?",
+                    options: ["She don't like it", "She doesn't like it", "She don't likes it", "She not like it"],
+                    correct: 1
+                },
+                {
+                    q: "What does 'ubiquitous' mean?",
+                    options: ["Rare", "Everywhere", "Forgotten", "Ancient"],
+                    correct: 1
+                },
+                {
+                    q: "Identify the adjective: 'The blue house'",
+                    options: ["The", "Blue", "House", "None"],
+                    correct: 1
+                },
+                {
+                    q: "What is the past tense of 'go'?",
+                    options: ["Going", "Went", "Gone", "Goes"],
+                    correct: 1
+                },
+                {
+                    q: "Which is a noun?",
+                    options: ["Run", "Happy", "Book", "Quickly"],
+                    correct: 2
+                },
+                {
+                    q: "What punctuation ends a statement?",
+                    options: ["?", "!", ".", ","],
+                    correct: 2
+                },
+                {
+                    q: "What is a synonym for 'small'?",
+                    options: ["Big", "Tiny", "Loud", "Dark"],
+                    correct: 1
+                },
+                {
+                    q: "Identify the verb: 'She runs quickly'",
+                    options: ["She", "Runs", "Quickly", "All"],
+                    correct: 1
+                },
+                {
+                    q: "What is the plural of 'child'?",
+                    options: ["Childs", "Children", "Childes", "Childre"],
+                    correct: 1
+                },
+                {
+                    q: "Which word is a preposition?",
+                    options: ["Beautiful", "Under", "Happy", "Run"],
+                    correct: 1
+                },
+                {
+                    q: "What does 'eloquent' mean?",
+                    options: ["Silent", "Fluent in speech", "Angry", "Confused"],
+                    correct: 1
+                },
+                {
+                    q: "Identify the adverb: 'He walked slowly'",
+                    options: ["He", "Walked", "Slowly", "None"],
+                    correct: 2
+                },
+                {
+                    q: "What is a compound word?",
+                    options: ["A long word", "Two words joined", "A foreign word", "A difficult word"],
+                    correct: 1
+                },
+                {
+                    q: "What is an antonym for 'hot'?",
+                    options: ["Warm", "Cold", "Spicy", "Burning"],
+                    correct: 1
+                },
+                {
+                    q: "Which sentence has correct capitalization?",
+                    options: ["the cat sat down", "The cat sat down", "The Cat Sat Down", "tHE CAT SAT DOWN"],
+                    correct: 1
+                },
+                {
+                    q: "What is the contraction of 'do not'?",
+                    options: ["do't", "don't", "do-not", "dnt"],
+                    correct: 1
+                },
+                {
+                    q: "Identify the conjunction: 'I like tea and coffee'",
+                    options: ["I", "Like", "And", "Coffee"],
+                    correct: 2
+                },
+                {
+                    q: "What is a metaphor?",
+                    options: ["A comparison using 'like'", "A direct comparison", "A type of poem", "A long sentence"],
+                    correct: 1
+                }
+            ],
+            science: [
+                {
+                    q: "What is the chemical symbol for Gold?",
+                    options: ["Go", "Gd", "Au", "Ag"],
+                    correct: 2
+                },
+                {
+                    q: "What is photosynthesis?",
+                    options: ["Process of taking photos", "Plant's food-making process", "Breaking down of sugar", "Splitting of atoms"],
+                    correct: 1
+                },
+                {
+                    q: "What is the basic unit of life?",
+                    options: ["Atom", "Molecule", "Cell", "Organ"],
+                    correct: 2
+                },
+                {
+                    q: "What is the speed of light?",
+                    options: ["3 × 10⁵ km/s", "3 × 10⁸ m/s", "3 × 10⁸ km/s", "3 × 10¹⁰ m/s"],
+                    correct: 2
+                },
+                {
+                    q: "How many bones are in the adult human body?",
+                    options: ["186", "206", "226", "246"],
+                    correct: 1
+                },
+                {
+                    q: "What does DNA stand for?",
+                    options: ["Deoxyribonucleic Acid", "Diribonucleic Acid", "Deoxyribose Nucleic", "Dynamic Nuclear Acid"],
+                    correct: 0
+                },
+                {
+                    q: "What is the smallest unit of matter?",
+                    options: ["Molecule", "Atom", "Electron", "Quark"],
+                    correct: 3
+                },
+                {
+                    q: "What is the main gas in Earth's atmosphere?",
+                    options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Argon"],
+                    correct: 1
+                },
+                {
+                    q: "What is the process of water turning into vapor?",
+                    options: ["Condensation", "Evaporation", "Sublimation", "Precipitation"],
+                    correct: 1
+                },
+                {
+                    q: "How many chambers does the human heart have?",
+                    options: ["2", "3", "4", "5"],
+                    correct: 2
+                },
+                {
+                    q: "What is the SI unit of force?",
+                    options: ["Joule", "Newton", "Pascal", "Watt"],
+                    correct: 1
+                },
+                {
+                    q: "What is the freezing point of water in Celsius?",
+                    options: ["0°C", "-32°C", "32°C", "100°C"],
+                    correct: 0
+                },
+                {
+                    q: "What is the study of rocks called?",
+                    options: ["Mineralogy", "Petrology", "Geology", "Geochemistry"],
+                    correct: 2
+                },
+                {
+                    q: "What element has atomic number 1?",
+                    options: ["Helium", "Hydrogen", "Lithium", "Beryllium"],
+                    correct: 1
+                },
+                {
+                    q: "What is the powerhouse of the cell?",
+                    options: ["Nucleus", "Ribosome", "Mitochondria", "Chloroplast"],
+                    correct: 2
+                },
+                {
+                    q: "What is the boiling point of water at sea level?",
+                    options: ["90°C", "100°C", "110°C", "120°C"],
+                    correct: 1
+                },
+                {
+                    q: "What type of animal is a dolphin?",
+                    options: ["Fish", "Mammal", "Amphibian", "Reptile"],
+                    correct: 1
+                },
+                {
+                    q: "What is the main component of natural gas?",
+                    options: ["Propane", "Methane", "Ethane", "Butane"],
+                    correct: 1
+                },
+                {
+                    q: "What is an organism that produces its own food called?",
+                    options: ["Consumer", "Decomposer", "Producer", "Predator"],
+                    correct: 2
+                },
+                {
+                    q: "What is the largest planet in our solar system?",
+                    options: ["Saturn", "Jupiter", "Neptune", "Uranus"],
+                    correct: 1
+                }
+            ],
+            history: [
+                {
+                    q: "In what year did Christopher Columbus reach America?",
+                    options: ["1490", "1491", "1492", "1493"],
+                    correct: 2
+                },
+                {
+                    q: "Who was the first President of the United States?",
+                    options: ["Thomas Jefferson", "George Washington", "John Adams", "Benjamin Franklin"],
+                    correct: 1
+                },
+                {
+                    q: "In which year did World War II end?",
+                    options: ["1943", "1944", "1945", "1946"],
+                    correct: 2
+                },
+                {
+                    q: "Who invented the telephone?",
+                    options: ["Nikola Tesla", "Alexander Graham Bell", "Thomas Edison", "Guglielmo Marconi"],
+                    correct: 1
+                },
+                {
+                    q: "What was the capital of ancient Egypt?",
+                    options: ["Cairo", "Giza", "Memphis", "Thebes"],
+                    correct: 2
+                },
+                {
+                    q: "In what year did the Titanic sink?",
+                    options: ["1910", "1911", "1912", "1913"],
+                    correct: 2
+                },
+                {
+                    q: "Who was the first Roman Emperor?",
+                    options: ["Julius Caesar", "Augustus", "Nero", "Tiberius"],
+                    correct: 1
+                },
+                {
+                    q: "When was the Declaration of Independence signed?",
+                    options: ["1774", "1775", "1776", "1777"],
+                    correct: 2
+                },
+                {
+                    q: "Who was the first person to walk on the moon?",
+                    options: ["Buzz Aldrin", "Neil Armstrong", "John Glenn", "Alan Shepard"],
+                    correct: 1
+                },
+                {
+                    q: "What ancient wonder was located in Egypt?",
+                    options: ["Hanging Gardens", "Great Pyramid of Giza", "Colossus", "Lighthouse"],
+                    correct: 1
+                },
+                {
+                    q: "In what year did the Renaissance begin?",
+                    options: ["13th century", "14th century", "15th century", "16th century"],
+                    correct: 1
+                },
+                {
+                    q: "Who wrote the Declaration of Independence?",
+                    options: ["Benjamin Franklin", "Thomas Jefferson", "John Adams", "James Madison"],
+                    correct: 1
+                },
+                {
+                    q: "What year was the Berlin Wall built?",
+                    options: ["1959", "1960", "1961", "1962"],
+                    correct: 2
+                },
+                {
+                    q: "Who was the longest-reigning British monarch before Queen Elizabeth II?",
+                    options: ["George III", "Victoria", "Edward VII", "George V"],
+                    correct: 1
+                },
+                {
+                    q: "In what year did the Indian Independence movement succeed?",
+                    options: ["1945", "1946", "1947", "1948"],
+                    correct: 2
+                },
+                {
+                    q: "What was the period of European cultural rebirth called?",
+                    options: ["Enlightenment", "Renaissance", "Baroque", "Reformation"],
+                    correct: 1
+                },
+                {
+                    q: "Who was the first Prime Minister of India?",
+                    options: ["Sardar Patel", "Jawaharlal Nehru", "Mahatma Gandhi", "B.R. Ambedkar"],
+                    correct: 1
+                },
+                {
+                    q: "In what year did the French Revolution begin?",
+                    options: ["1787", "1788", "1789", "1790"],
+                    correct: 2
+                },
+                {
+                    q: "What empire built Machu Picchu?",
+                    options: ["Aztec", "Maya", "Inca", "Olmec"],
+                    correct: 2
+                },
+                {
+                    q: "Who was the first Holy Roman Emperor?",
+                    options: ["Otto I", "Charlemagne", "Frederick Barbarossa", "Charles V"],
+                    correct: 1
+                }
+            ],
+            geography: [
+                {
+                    q: "What is the capital of France?",
+                    options: ["Lyon", "Paris", "Marseille", "Nice"],
+                    correct: 1
+                },
+                {
+                    q: "Which is the longest river in the world?",
+                    options: ["Amazon", "Nile", "Yangtze", "Mississippi"],
+                    correct: 1
+                },
+                {
+                    q: "What is the largest desert in the world?",
+                    options: ["Kalahari", "Arabian", "Sahara", "Gobi"],
+                    correct: 2
+                },
+                {
+                    q: "Which country has the most islands?",
+                    options: ["Indonesia", "Norway", "Finland", "Sweden"],
+                    correct: 0
+                },
+                {
+                    q: "What is the capital of Japan?",
+                    options: ["Osaka", "Tokyo", "Kyoto", "Yokohama"],
+                    correct: 1
+                },
+                {
+                    q: "Which is the smallest country in the world?",
+                    options: ["Monaco", "San Marino", "Vatican City", "Liechtenstein"],
+                    correct: 2
+                },
+                {
+                    q: "What is the highest mountain in the world?",
+                    options: ["K2", "Mount Everest", "Kangchenjunga", "Lhotse"],
+                    correct: 1
+                },
+                {
+                    q: "Which ocean is the largest?",
+                    options: ["Atlantic", "Indian", "Arctic", "Pacific"],
+                    correct: 3
+                },
+                {
+                    q: "What is the capital of Australia?",
+                    options: ["Sydney", "Melbourne", "Canberra", "Brisbane"],
+                    correct: 2
+                },
+                {
+                    q: "Which country is known as the 'Land of a Thousand Lakes'?",
+                    options: ["Sweden", "Finland", "Norway", "Canada"],
+                    correct: 1
+                },
+                {
+                    q: "What is the equator?",
+                    options: ["Highest latitude", "0° latitude", "Prime meridian", "International date line"],
+                    correct: 1
+                },
+                {
+                    q: "Which continent is the driest?",
+                    options: ["Africa", "Australia", "Antarctica", "South America"],
+                    correct: 2
+                },
+                {
+                    q: "What is the capital of Brazil?",
+                    options: ["Rio de Janeiro", "São Paulo", "Brasília", "Salvador"],
+                    correct: 2
+                },
+                {
+                    q: "Which country spans two continents?",
+                    options: ["Turkey", "Egypt", "Russia", "All of above"],
+                    correct: 3
+                },
+                {
+                    q: "What is the deepest ocean trench?",
+                    options: ["Java Trench", "Tonga Trench", "Mariana Trench", "Kuril Trench"],
+                    correct: 2
+                },
+                {
+                    q: "How many countries are in Africa?",
+                    options: ["50", "52", "54", "56"],
+                    correct: 2
+                },
+                {
+                    q: "What is the capital of India?",
+                    options: ["Mumbai", "New Delhi", "Bangalore", "Kolkata"],
+                    correct: 1
+                },
+                {
+                    q: "Which is the largest island in the world?",
+                    options: ["Madagascar", "Greenland", "New Guinea", "Borneo"],
+                    correct: 1
+                },
+                {
+                    q: "What is the capital of South Africa?",
+                    options: ["Johannesburg", "Cape Town", "Pretoria", "All are capitals"],
+                    correct: 3
+                },
+                {
+                    q: "Which European country has the most population?",
+                    options: ["Germany", "United Kingdom", "France", "Italy"],
+                    correct: 0
+                }
+            ]
+        };
+
+        function startMatchmaking(event) {
+            event.preventDefault();
+            const name = document.getElementById('playerName').value.trim();
+            const subject = document.getElementById('subject').value;
+
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            gameState.currentPlayer = {
+                name: name,
+                isCurrentUser: true
+            };
+            gameState.subject = subject;
+
+            showScreen('waitingScreen');
+            document.getElementById('waitingSubject').textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+            startWaitingTimer();
+        }
+
+        function startWaitingTimer() {
+            let timeLeft = 60;
+            document.getElementById('waitTimer').textContent = timeLeft;
+
+            gameState.waitingTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('waitTimer').textContent = timeLeft;
+
+                if (timeLeft === 0) {
+                    clearInterval(gameState.waitingTimer);
+                    // Simulate opponent found
+                    matchmakeOpponent();
+                } else if (timeLeft % 15 === 0 && timeLeft > 0) {
+                    // Simulate opponent found at random time
+                    if (Math.random() > 0.5) {
+                        clearInterval(gameState.waitingTimer);
+                        matchmakeOpponent();
+                    }
+                }
+            }, 1000);
+        }
+
+        function matchmakeOpponent() {
+            const names = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry'];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+
+            gameState.opponent = {
+                name: randomName,
+                isCurrentUser: false
+            };
+
+            // Load questions
+            gameState.questions = [...questionBanks[gameState.subject]].sort(() => Math.random() - 0.5).slice(0, 20);
+            gameState.currentQuestion = 0;
+            gameState.scores = { player1: 0, player2: 0 };
+
+            showScreen('gameScreen');
+            loadQuestion();
+        }
+
+        function cancelWaiting() {
+            clearInterval(gameState.waitingTimer);
+            showScreen('loginScreen');
+            document.getElementById('playerName').value = '';
+            document.getElementById('subject').value = '';
+        }
+
+        function loadQuestion() {
+            const q = gameState.questions[gameState.currentQuestion];
+            gameState.answered = false;
+            gameState.answeredBy = null;
+            gameState.startTimes[gameState.currentQuestion] = Date.now();
+
+            document.getElementById('questionNumber').textContent = `Question ${gameState.currentQuestion + 1}/20`;
+            document.getElementById('questionText').textContent = q.q;
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            q.options.forEach((option, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => answerQuestion(idx);
+                container.appendChild(btn);
+            });
+
+            // Update player card styling
+            updatePlayerCards();
+            startQuestionTimer();
+        }
+
+        function answerQuestion(optionIdx) {
+            if (gameState.answered) return;
+
+            gameState.answered = true;
+            const q = gameState.questions[gameState.currentQuestion];
+            const isCorrect = optionIdx === q.correct;
+
+            gameState.questionTimes[gameState.currentQuestion] = (Date.now() - gameState.startTimes[gameState.currentQuestion]) / 1000;
+
+            // Show result
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === q.correct) {
+                    btn.classList.add('correct');
+                } else if (idx === optionIdx && !isCorrect) {
+                    btn.classList.add('incorrect');
+                } else {
+                    btn.classList.add('locked');
+                }
+            });
+
+            // Award points
+            if (isCorrect) {
+                const timeBonus = Math.max(0, 45 - gameState.questionTimes[gameState.currentQuestion]);
+                const points = 100 + Math.round(timeBonus * 10);
+                gameState.scores.player1 += points;
+            }
+
+            // Simulate opponent's answer
+            setTimeout(() => {
+                if (!gameState.answered) return;
+                const opponentCorrect = Math.random() > 0.3;
+                if (opponentCorrect && !isCorrect) {
+                    const points = 100 + Math.round(Math.random() * 300);
+                    gameState.scores.player2 += points;
+                }
+            }, 800);
+
+            clearInterval(gameState.questionTimer);
+            setTimeout(nextQuestion, 2000);
+        }
+
+        function nextQuestion() {
+            gameState.currentQuestion++;
+            if (gameState.currentQuestion >= 20) {
+                endGame();
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function startQuestionTimer() {
+            let timeLeft = 45;
+            document.getElementById('timerText').textContent = `${timeLeft}s`;
+
+            gameState.questionTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timerText').textContent = `${timeLeft}s`;
+                const percent = (timeLeft / 45) * 100;
+                document.getElementById('timerFill').style.width = percent + '%';
+
+                if (timeLeft <= 0) {
+                    clearInterval(gameState.questionTimer);
+                    if (!gameState.answered) {
+                        gameState.answered = true;
+                        const buttons = document.querySelectorAll('.option-btn');
+                        buttons.forEach(btn => btn.disabled = true);
+                        setTimeout(nextQuestion, 1500);
+                    }
+                }
+            }, 1000);
+
+            document.getElementById('timerFill').style.width = '100%';
+        }
+
+        function updatePlayerCards() {
+            const p1Card = document.getElementById('player1Card');
+            const p2Card = document.getElementById('player2Card');
+            p1Card.classList.remove('active');
+            p2Card.classList.remove('active');
+            if (!gameState.answered) {
+                p1Card.classList.add('active');
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameState.questionTimer);
+            const playerWon = gameState.scores.player1 > gameState.scores.player2;
+            const correctCount = Object.keys(gameState.answers).length;
+
+            document.getElementById('resultTitle').textContent = playerWon ? '🎉 You Won!' : gameState.scores.player1 === gameState.scores.player2 ? '🤝 Draw!' : '😅 You Lost!';
+            document.getElementById('resultIcon').textContent = playerWon ? '🏆' : '💪';
+            document.getElementById('resultScore').textContent = gameState.scores.player1;
+            document.getElementById('correctAnswers').textContent = `${Object.keys(gameState.answers).length || 0}/20`;
+            document.getElementById('avgTime').textContent = (Object.values(gameState.questionTimes).reduce((a, b) => a + b, 0) / 20 || 0).toFixed(1) + 's';
+            document.getElementById('opponentName').textContent = gameState.opponent.name;
+            document.getElementById('opponentScore').textContent = gameState.scores.player2;
+
+            showScreen('resultScreen');
+        }
+
+        function rematchSameOpponent() {
+            gameState.currentQuestion = 0;
+            gameState.scores = { player1: 0, player2: 0 };
+            gameState.answers = {};
+            gameState.questionTimes = {};
+            gameState.questions = [...questionBanks[gameState.subject]].sort(() => Math.random() - 0.5).slice(0, 20);
+            showScreen('gameScreen');
+            loadQuestion();
+        }
+
+        function findNewOpponent() {
+            document.getElementById('playerName').value = gameState.currentPlayer.name;
+            document.getElementById('subject').value = gameState.subject;
+            showScreen('waitingScreen');
+            document.getElementById('waitingSubject').textContent = gameState.subject.charAt(0).toUpperCase() + gameState.subject.slice(1);
+            startWaitingTimer();
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
