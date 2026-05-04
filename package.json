@@ -1,0 +1,29 @@
+{
+  "name": "quizmatch-server",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer quiz game with WebSocket support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo Building..."
+  },
+  "keywords": [
+    "quiz",
+    "game",
+    "multiplayer",
+    "websocket",
+    "real-time"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0",
+    "cors": "^2.8.5"
+  }
+}
